@@ -32,7 +32,7 @@ var dataset;
 var margin = {top: 20, right: 20, bottom: 25, left: 25};
 
 //width and height    
-var outer_width = 1000;
+var outer_width = 800;
 var outer_height = 600;
 var svg_width = outer_width - margin.left - margin.right;
 var svg_height = outer_height - margin.top - margin.bottom;
@@ -59,6 +59,11 @@ function yearFilter(value){
         
     
     var yAxis = d3.axisLeft().scale(yScale);
+    
+    //set up color for each region
+    // setup fill color
+var colorValue = function(d) { return d.Region;},
+    color = d3.scaleOrdinal(d3.schemeCategory10);
 
       
 // add canvas to page with margin transfer
@@ -82,7 +87,7 @@ function generateVis(){
                 });
                                                     
    // Update the display of existing elelemnts to match new data
-  	circles.attr("cy", function(d,i) { //check this if i or no?
+  	circles.attr("cy", function(d,i) { 
 		   		return yScale(d.LifeExp);
 		   })
 		   
@@ -91,14 +96,14 @@ function generateVis(){
 		   })
 		  .transition()
             .attr("r", 5)
-		   .style("fill", "blue"); 
+		   .style("fill", function(d) { return color(colorValue(d));}) 
     
     //ENTER SELECTION
         circles.enter().append("circle")
             .attr("r", 5)
             .attr("cx", function (d,i){return xScale(d.GDP);})
             .attr("cy", function(d, i){return yScale(d.LifeExp);})
-            .style("fill", "Blue") ;
+            .style("fill", function(d) { return color(colorValue(d));}) 
 
 /******** HANDLE EXIT SELECTION ************/
 	// Remove bars that not longer have a matching data eleement
@@ -123,13 +128,16 @@ d3.csv("data/Gapminder_small.csv", function(error, data) {
 					dataset = data;
                     
                     // Set the domains of the x and y scales using the data
-			var max_life = d3.max(dataset, function(d) { return d.LifeExp;} );
-			var max_gdp = d3.max(dataset, function(d) { return +d.GDP;} );
-            var xdom_max = max_gdp + 5000;
-			//var min_gdp = d3.min(dataset, function(d) { return d.GDP;} );
+			var max_life = d3.max(dataset, function(d) { return d.LifeExp;} ) +10;
+                   
+            var min_life = d3.min(dataset, function(d){return d.LifeExp;}) - 10;
+                    
+			var max_gdp = d3.max(dataset, function(d) { return +d.GDP;}) + 5000;
+                         
+			var min_gdp = d3.min(dataset, function(d) { return d.GDP;} ) - 10000;
 		
-			xScale.domain([0, xdom_max]);
-			yScale.domain([0, max_life]);
+			xScale.domain([min_gdp, max_gdp]);
+			yScale.domain([min_life, max_life]);
 
 			// Create the x-axis
 			svg.append("g")
