@@ -6,24 +6,33 @@
 <!-- Example based on http://bl.ocks.org/mbostock/3887118 -->
 <!-- Tooltip example from http://www.d3noob.org/2013/01/adding-tooltips-to-d3js-graph.html -->
 <style type="text/css">
-		.axis path,
-		.axis line {
+    .axis path,
+    .axis line {
 		    fill: none;
 		    stroke: black;
 		    shape-rendering: crispEdges;
 		}
 		
-		.axis text {
+    .axis text {
 		    font-family: sans-serif;
-		    font-size: 11px;
+		    font-size: 12px;
 		}	
     
     .tooltip {
-  position: absolute;
-  width: 200px;
-  height: 28px;
-  pointer-events: none;
-}
+        position: absolute;
+        width: 170px;					
+        height: 120px;					
+        padding: 2px;				
+        font: 12px sans-serif;		
+        background-color: lightblue;
+        border: 5px;
+        border-color: darkgrey;		
+        border-radius: 8px;			
+        pointer-events: none;
+    }
+    .legend {
+        font-size: 12px;
+      }
 	</style>
     </head>
 <body>
@@ -36,7 +45,7 @@
 var dataset;
 
 //margins
-var margin = {top: 20, right: 20, bottom: 25, left: 25};
+var margin = {top: 100, right: 20, bottom: 45, left: 60};
 
 //width and height    
 var outer_width = 800;
@@ -44,8 +53,7 @@ var outer_height = 600;
 var svg_width = outer_width - margin.left - margin.right;
 var svg_height = outer_height - margin.top - margin.bottom;
 
-
-// The year to display
+// First year to display
 display_year = 2006;
 
 // function that filters data by year
@@ -64,22 +72,30 @@ var yScale = d3.scaleLinear()
     .range([svg_height,0])
         
 var yAxis = d3.axisLeft().scale(yScale);
-    
+  
+//set up color/region legend
+var legendRectSize = 18;
+
+var legendSpacing = 4;
+
 //set up fill color for each region
 var colorValue = function(d) { return d.Region;},
     color = d3.scaleOrdinal(d3.schemeCategory10);
- 
+
+    
 // add canvas to page with margin transfer
-var svg = d3.select("body").append("svg")
+var svg = d3.select("body")
+    .append("svg")
     .attr("width", svg_width + margin.left + margin.right)
     .attr("height", svg_height + margin.top + margin.bottom)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");    
     
 // add the tooltip area to the webpage
-var tooltip = d3.select("body").append("div")
+var tooltip_div = d3.select("body").append("div")
     .attr("class", "tooltip")
     .style("opacity", 0);
+   
     
 function generateVis(){   
     
@@ -115,22 +131,47 @@ function generateVis(){
         .style("fill", function(d) { return color(colorValue(d));}) 
         
         .on("mouseover", function(d) {
-          
-        tooltip
-            .transition()
+            tooltip_div.transition()
             .duration(200)
             .style("opacity", .9);
             
-        tooltip.html(d["Country"])
-            .style("left", (d3.event.pageX + 5) + "px")
+        tooltip_div.html("Country: " + d["Country"] + "<br/>" + "Region: " + d["Region"] + "<br/>" + "Coastline: " + d["Coastline"] + "<br/>" + "Population: " + d["Population"] + "<br/>" +"GDP: " + d["GDP"] + "<br/>" +"Life Expectancy: "+ d["LifeExp"] + "<br/>" +"Government: " + d["Government"])
+            .style("left", (d3.event.pageX) + "px")
             .style("top", (d3.event.pageY - 25) + "px");
       })
-    
         .on("mouseout", function(d) {
-          tooltip.transition()
+            tooltip_div.transition()
               .duration(500)
               .style("opacity", 0);
       });
+
+
+//draw legend
+    var legend = svg.selectAll('legend')
+    .data(color.domain())
+    .enter()
+    .append('g')
+    .attr('class', 'legend')
+    .attr('transform', function(d, i) {
+        var leg_height = 25;
+        var leg_offset =  leg_height * color.domain().length / 2;
+       //unecessary var :  var leg_horizontal = 500;
+        var leg_vertical = i * leg_height - leg_offset -70;
+        return 'translate(' + 500 + ',' + leg_vertical + ')';
+            });
+    
+    legend.append('rect')
+        .attr('width', legendRectSize)
+        .attr('height', legendRectSize)
+        .style('fill', color)
+        .style('stroke', color);
+
+    legend.append('text')
+        .attr('x', legendRectSize + legendSpacing)
+        .attr('y', legendRectSize - legendSpacing)
+        .text(function(d) { return d; });
+
+    
 
 /******** HANDLE EXIT SELECTION ************/
 	// Remove bars that not longer have a matching data eleement
@@ -171,19 +212,31 @@ function generateVis(){
 				.attr("class", "axis")
 				.attr("id", "x-axis")
 				.attr("transform", "translate(0," + svg_height + ")")
-				svg.select("#x-axis").call(xAxis);
-				
+				svg.select("#x-axis")
+                .call(xAxis);
+            
+            //create x-axis title
+            svg.append("text")             
+                .attr("transform","translate(" + (svg_width/2) + " ," + (svg_height + margin.top + 25) + ")")
+                .style("text-anchor", "middle")
+                .text("GDP");
+            
 			// Create the y axis
 			svg.append("g")
 				.attr("class", "axis")
 				.attr("id", "y-axis")
-                svg.select("#y-axis").call(yAxis)
-				    .append("text")
-				    .attr("y", 6)
-				    .attr("dy", ".71em")
-				    .style("text-anchor", "end")
-				    .text("Life Expectancy");
-		
+                svg.select("#y-axis")
+                .call(yAxis);    
+            
+            //create y-axis title
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin.left)
+                .attr("x",0 - (svg_height / 2))
+                .attr("dy", "1em")
+                .style("text-anchor", "middle")
+                .text("Avg Life Expectancy");  
+            
             // Generate the visualisation
             generateVis();
                 
@@ -194,7 +247,7 @@ function generateVis(){
 				display_year = 2006;
 			}
 		  	generateVis();
-		}, 2500);
+		}, 3000);
 	}   
 });
 
