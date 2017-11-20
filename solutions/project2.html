@@ -16,7 +16,11 @@
     .axis text {
 		    font-family: sans-serif;
 		    font-size: 12px;
-		}	
+		}
+    
+    .find_it {
+        background-color: aqua;
+    }
     
     .tooltip {
         position: absolute;
@@ -43,19 +47,15 @@
     
 //global data variable
 var dataset;
-
 //margins
 var margin = {top: 100, right: 20, bottom: 45, left: 60};
-
 //width and height    
 var outer_width = 800;
 var outer_height = 600;
 var svg_width = outer_width - margin.left - margin.right;
 var svg_height = outer_height - margin.top - margin.bottom;
-
 // First year to display
 display_year = 2006;
-
 // function that filters data by year
 function yearFilter(value){
 	return (value.Year == display_year)
@@ -66,7 +66,6 @@ var xScale = d3.scaleLinear()
     .range([0, svg_width]) //value of display
         
 var xAxis = d3.axisBottom().scale(xScale);
-
 // setup y
 var yScale = d3.scaleLinear()
     .range([svg_height,0])
@@ -75,13 +74,10 @@ var yAxis = d3.axisLeft().scale(yScale);
   
 //set up color/region legend
 var legendRectSize = 18;
-
 var legendSpacing = 4;
-
 //set up fill color for each region
 var colorValue = function(d) { return d.Region;},
     color = d3.scaleOrdinal(d3.schemeCategory10);
-
     
 // add canvas to page with margin transfer
 var svg = d3.select("body")
@@ -89,7 +85,7 @@ var svg = d3.select("body")
     .attr("width", svg_width + margin.left + margin.right)
     .attr("height", svg_height + margin.top + margin.bottom)
     .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");    
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");   
     
 // add the tooltip area to the webpage
 var tooltip_div = d3.select("body").append("div")
@@ -101,7 +97,6 @@ function generateVis(){
     
     // Filter the data to only include the current year
 	var filtered_dataset = dataset.filter(yearFilter);
-
     // PERFORM DATA JOIN
     //make circless
     var circles = svg.selectAll("circle")
@@ -120,7 +115,6 @@ function generateVis(){
         .attr("r", 5)
         .style("fill", function(d) {return color(colorValue(d));
         }) 
-
     
     //ENTER SELECTION
     circles
@@ -144,8 +138,7 @@ function generateVis(){
               .duration(500)
               .style("opacity", 0);
       });
-
-
+    
 //draw legend
     var legend = svg.selectAll('legend')
     .data(color.domain())
@@ -165,25 +158,21 @@ function generateVis(){
         .attr('height', legendRectSize)
         .style('fill', color)
         .style('stroke', color);
-
+    
     legend.append('text')
         .attr('x', legendRectSize + legendSpacing)
         .attr('y', legendRectSize - legendSpacing)
         .text(function(d) { return d; });
-
     
-
 /******** HANDLE EXIT SELECTION ************/
 	// Remove bars that not longer have a matching data eleement
 	circles.exit().remove();
-
     // Set the year label
 	d3.select("#year_header").text("Year: " + display_year)
     }    
     
     // load data
     d3.csv("data/Gapminder_small.csv", function(error, data) {
-
     // handle any data loading errors
         if(error){
             console.log("Something went wrong");
@@ -206,7 +195,6 @@ function generateVis(){
 		
 			xScale.domain([min_gdp, max_gdp]);
 			yScale.domain([min_life, max_life]);
-
 			// Create the x-axis
 			svg.append("g")
 				.attr("class", "axis")
@@ -216,9 +204,8 @@ function generateVis(){
                 .call(xAxis);
             
             //create x-axis title
-            svg.append("text")             
-                .attr("transform","translate(" + (svg_width/2) + " ," + (svg_height + margin.top + 25) + ")")
-                .style("text-anchor", "middle")
+              svg.append("text")         .attr("transform", "translate(" + (svg_width/2) + " ," + (svg_height + margin.top + -55) + ")")
+              .style("text-anchor", "middle")
                 .text("GDP");
             
 			// Create the y axis
@@ -250,7 +237,6 @@ function generateVis(){
 		}, 3000);
 	}   
 });
-
  
 </script>
 </body>
