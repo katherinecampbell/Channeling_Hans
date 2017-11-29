@@ -5,9 +5,22 @@
 <script type="text/javascript" src="./d3/d3.v4.js" charset="utf-8"></script>
 
 
+
 <!-- Example based on http://bl.ocks.org/mbostock/3887118 -->
 <!-- Tooltip example from http://www.d3noob.org/2013/01/adding-tooltips-to-d3js-graph.html -->
 <style type="text/css">
+.bar{
+  fill:#eaeaea;
+}
+text.label{
+  fill: #777777;
+  color: #777777;
+  font-size: 20px;
+  font-weight: bold;
+}
+text.category{
+  fill: #666666;
+}
     .axis path,
     .axis line {
 		    fill: none;
@@ -42,7 +55,7 @@
         }
   #play-button {
       position: absolute;
-      top: 140px;
+      top: 70px;
       left: 50px;
       background: #f08080;
       padding-right: 26px;
@@ -94,8 +107,16 @@
       stroke-opacity: 0.5;
       stroke-width: 1.25px;
     }
+    .bars{
+      width:300px;
+      height:400px;
+    }
+
     
 	</style>
+<!--   <div id="barContainer">
+<p> hello </p>
+  </div> -->
     </head>
 <body>
  
@@ -104,7 +125,9 @@
 <div id="vis">
   <button id="play-button">Play</button>
 </div> 
+<div id="bars"> hello</div>
     
+
 <script>
     
     //look at making population area not radius - make your own area formula
@@ -113,34 +136,34 @@
     
 //global data variable
 var dataset;
-    
-//margins
+   
+//This section is variables for svg for main bubble charts  
+//margins , width and height for bubble chart svg 
 var margin = {top: 100, right: 20, bottom: 45, left: 60};
-    
-//width and height    
 var outer_width = 900;
 var outer_height = 500;
 var svg_width = outer_width - margin.left - margin.right;
 var svg_height = outer_height - margin.top - margin.bottom;
     
+
+
+
+
 // First year to display
-display_year = 1990;
+display_year = 1900;
 
 // function that filters data by year
 function yearFilter(value){
-	return (value.Year == display_year)
+	
+  return (value.Year == display_year)
 }
     
-//set up 
-//move to scale log on bigger data
+// XScale is using  scaleSqrt as this is the way we can give more space for first 20% of GDP, where everthing happens and thus the animation more visable
 var xScale = d3.scaleSqrt()
     .range([0,  svg_width -20])
-
-console.log(xScale(1000)  )  
-        
+    // setting up the xAxis 
 var xAxis = d3.axisBottom().scale(xScale)
             .ticks(4)
-            // .tickValues([10000,20000,50000,80000,200000])
             .tickFormat(d3.format("0.1s"));
 
     
@@ -150,9 +173,9 @@ var yScale = d3.scaleLinear()
         
 var yAxis = d3.axisLeft().scale(yScale);
 
-//set up scale to manage radius of circles
+//set up scale to manage radius of circles, use scaleSqrt to give relatively accurate ration. 
 var r_scale = d3.scaleSqrt()
-     .range([2.2, 42]);
+     .range([3.2, 42]);
     
 //set up color/region legend
 var legendRectSize = 18;
@@ -170,9 +193,9 @@ var svg = d3.select("body")
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");  
 
-// this section is for timer 
+// this section is for varables for time slider
 
-var t_width = 800
+var t_width = 830
 var t_height = 30
 var x = d3.scaleTime()
     .domain([display_year, endDate])
@@ -180,18 +203,20 @@ var x = d3.scaleTime()
     .clamp(true); 
 
 var formatDateIntoYear = d3.timeFormat("%Y");
-var formatDate = d3.timeFormat("%b %Y");
+
+var formatDate = d3.timeFormat("%Y");
+
 var parseDate = d3.timeParse("%y");
 
-var startDate = new Date( "1990" );
+var startDate = new Date( "1900" );
 var  endDate = new Date("2016");
 
-// making the svg for play button and so ong 
+// making the svg for play button and so ong
 var svg1 = d3.select("#vis")
     .append("svg")
     .attr("width", t_width + 60 +60 )
     .attr("height", t_height + 60 );  
-
+console.log(svg1)
 var moving = false;
 var currentValue = 0;
 var targetValue = t_width;
@@ -201,17 +226,20 @@ var x = d3.scaleTime()
     .domain([startDate, endDate])
     .range([0, targetValue])
     .clamp(true);
+
+//  creating cavas for time slider.
 var slider = svg1.append("g")
     .attr("class", "slider")
-    .attr("transform", "translate(" + 70 + "," + t_height*2 + ")");
+    .attr("transform", "translate(" + 70 + "," + t_height/2 + ")");
 
+//  add line svg into slider with  function update to update the time and bubble chart as times goes on. Update function will be difined later.
 slider.append("line")
     .attr("class", "track")
     .attr("x1", x.range()[0])
     .attr("x2", x.range()[1])
-  .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
     .attr("class", "track-inset")
-  .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
     .attr("class", "track-overlay")
     .call(d3.drag()
         .on("start.interrupt", function() { slider.interrupt(); })
@@ -220,10 +248,12 @@ slider.append("line")
           update(x.invert(currentValue)); 
         })
     );
+
+// text information is from x (the timer svg we difned, and input will be from timescale invert function, start from 1990 to 2017, if one can equally divide the width )
 slider.insert("g", ".track-overlay")
     .attr("class", "ticks")
     .attr("transform", "translate(0," + 18 + ")")
-  .selectAll("text")
+    .selectAll("text")
     .data(x.ticks(10))
     .enter()
     .append("text")
@@ -232,27 +262,193 @@ slider.insert("g", ".track-overlay")
     .attr("text-anchor", "middle")
     .text(function(d) { return formatDateIntoYear(d); });
 
+// the small indicator of timer movement. 
 var handle = slider.insert("circle", ".track-overlay")
     .attr("class", "handle")
     .attr("r", 9);
 
+// same as text above in insert
 var label = slider.append("text")  
     .attr("class", "label")
     .attr("text-anchor", "middle")
     .text(formatDate(startDate))
     .attr("transform", "translate(0," + (-25) + ")")
 
-// add the tooltip area to the webpage
+
+// add the tooltip area to the webpage, this is for hover function to give more information of each country. 
 var tooltip_div = d3.select("body").append("div")
     .attr("class", "tooltip")
     .style("opacity", 0.10);
+/************************* This part is for bar chart section ***************************************************/
+//updatingBarChart.js
 
+var setup = function(targetID){
+  //Set size of svg element and chart
+  var margin = {top: 0, right: 100, bottom: 60, left: 730},
+    width = 400 
+    height = 340 - margin.top - margin.bottom,
+    categoryIndent = 4*15 + 5,
+    defaultBarWidth = 340;
+
+  //Set up scales
+  var x = d3.scaleLinear()
+    .domain([0,defaultBarWidth])
+    .range([0,width-50]);
+  // var y = d3.scaleOrdinal()
+  //   .rangeRoundBands([0, height], 0.1, 0);
+   var y= d3.scaleBand().rangeRound([0, height]).padding(0.1)
+
+  //Create SVG element
+    d3.select(targetID).selectAll("bars1").remove()
+   var bars1 = d3.select(targetID).append("svg")
+            .attr("width", 360)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" +20 +"," +20 + ")");
+            
+
+  //Package and export settings
+  var settings = {
+    margin:margin, width:width, height:height, categoryIndent:categoryIndent,
+    svg:bars1, x:x, y:y
+  }
+  return settings;
+}
+var redrawChart = function(targetID, newdata) {
+  // console.log(display_year)
+  // console.log("hello i am here ", newdata)
+  //Import settings
+  var margin=settings.margin, width=100, height=100, categoryIndent=settings.categoryIndent, 
+  svg=settings.svg, x=settings.x, y=settings.y;
+
+  //Reset domains
+  y.domain(newdata.sort(function(a,b){
+    // console.log("this is b", b.value , "and this is a ", a.value)
+    return b.value - a.value;
+
+  })
+    .map(function(d) { return d.key; }));
+  var barmax = d3.max(newdata, function(e) {
+    
+    return e.value;
+  });
+  x.domain([0,barmax]);
+
+
+
+  /////////
+  //ENTER//
+  /////////
+
+  //Bind new data to chart rows 
+  var colorValue1 = function(d) { return d.key;};
+  //Create chart row and move to below the bottom of the chart
+  var chartRow = svg.selectAll("g.chartRow")
+    .data(newdata, function(d){ return d.key});
+  var newRow = chartRow
+    .enter()
+    .append("g")
+    .attr("class", "chartRow")
+    .attr("transform", "translate(0," + height + margin.top + margin.bottom + ")");
+
+  //Add rectangles
+  newRow.insert("rect")
+    .attr("class","bar")
+    .attr("x", 0)
+    .attr("opacity",0)
+    .attr("height", y.bandwidth())
+    .attr("width", function(d) { return x(d.value);}) 
+    .attr("width",function(d) { return x(d.value);})
+    .on("mouseover", function() {
+            d3.select(this)
+              .style("fill", function(d) {return color(colorValue1(d));})
+        })
+    .on("mouseout", function(d, i) {
+            d3.select(this).style("fill","#eaeaea")})
+        
+    // .style("fill", function(d) {return color(colorValue1(d));}) ;
+    // .style("fill", "green")
+  //Add value labels
+  newRow.append("text")
+    .attr("class","label")
+    .attr("y", y.bandwidth()/2)
+    .attr("x",0)
+    .attr("opacity",0)
+    .attr("dy",".35em")
+    .attr("dx","0.5em")
+    .text(function(d){return +d.value}); 
+  
+  //Add Headlines
+  newRow.append("text")
+    .attr("class","category")
+    .attr("text-overflow","ellipsis")
+    .attr("y", y.bandwidth()/2)
+    .attr("x",categoryIndent)
+    .attr("opacity",0)
+    .attr("dy",".35em")
+    .attr("dx","0.5em")
+    .text(function(d){return d.key});
+
+
+  //////////
+  //UPDATE//
+  //////////
+  
+  //Update bar widths
+  chartRow.select(".bar").transition()
+    .duration(100)
+    .attr("width", function(d) { return x(d.value);})
+    .attr("opacity",1);
+
+  //Update data labels
+  chartRow.select(".label").transition()
+    .duration(10)
+    .attr("opacity",1)
+    // .tween("text", function(d) { 
+    // var i = d3.interpolate(+this.textContent.replace(/\,/g,''), +d.value);
+    // // console.log("this is i", i)
+    // return function(t) {
+    //   this.textContent = Math.round(i(t));
+    //   console.log("is it working here ", this.textContent)
+
+    // };
+    // });
+
+  //Fade in categories
+  chartRow.select(".category").transition()
+    .duration(100)
+    .attr("opacity",1);
+
+
+  ////////
+  //EXIT//
+  ////////
+
+  //Fade out and remove exit elements
+  chartRow.exit().transition()
+    .style("opacity","0")
+    .attr("transform", "translate(0," + (height + margin.top + margin.bottom) + ")")
+    .remove();
+
+
+  ////////////////
+  //REORDER ROWS//
+  ////////////////
+
+  var delay = function(d, i) { return 200 + i * 30; };
+
+  chartRow.transition()
+    .delay(delay)
+    .duration(200)
+    .attr("transform", function(d){ return "translate(0," + y(d.key) + ")"; });
+};
  
-
+// This is the main function we use to create the bubble chart( create lots circle based on the data form CSV)
 function generateVis(){   
   
     // Filter the data to only include the current year
-	var filtered_dataset = dataset.filter(yearFilter);
+	  var filtered_dataset = dataset.filter(yearFilter);
+
     
     // PERFORM DATA JOIN
   
@@ -262,7 +458,7 @@ function generateVis(){
                                                     
    // Update the display of existing elements to match new data
   	circles
-        .transition(500)
+        .transition(d3.easeLinear,2)
         .attr("cy", function(d,i) { 
 		   		return yScale(d.LifeExp);
 		  })
@@ -272,8 +468,16 @@ function generateVis(){
         
         .attr("r", function(d, i) { return r_scale(d.Population);
             })
-        .style("fill", function(d) {return color(colorValue(d));
-        }) 
+              .transition() //this fucntion is to make a blinking animation, at the moment is 0 which means we disabled it, but its still a cool feature.
+              .duration(0)
+              .attr("r", 3)
+                 .transition()
+                 .attr("r", function(d, i) { return r_scale(d.Population);})
+        .style("fill", function(d) {return color(colorValue(d));}) 
+        .style("stroke-opacity", .3)
+        .style("stroke", "black") 
+        .style("opacity",0.8)
+        
 
 //Make cool display year in the middle to update    
 svg.select("text.middleyear")
@@ -287,11 +491,9 @@ svg.select("text.middleyear")
     //ENTER SELECTION
     circles
         .enter().append("circle")
-        .attr("r", 0) //to make circles appear they are growing
         .attr("cx", function (d,i){return xScale(d.GDP);})
         .attr("cy", function(d, i){return yScale(d.LifeExp);})
         .style("fill", function(d) { return color(colorValue(d));}) 
-        
         .on("mouseover", function(d) {
             tooltip_div.transition()
             .duration(200)
@@ -300,19 +502,14 @@ svg.select("text.middleyear")
         tooltip_div.html("Country: " + d["Country"] + "<br/>" + "Region: " + d["Region"] + "<br/>" + "Coastline: " + d["Coastline"] + "<br/>" + "Population: " + d["Population"] + "<br/>" +"GDP: " + d["GDP"] + "<br/>" +"Life Expectancy: "+ d["LifeExp"] + "<br/>" +"Government: " + d["Government"])
             .style("left", (d3.event.pageX) + "px")
             .style("top", (d3.event.pageY - 25) + "px");
-      })
+        })
         .on("mouseout", function(d) {
             tooltip_div.transition()
               .duration(500)
               .style("opacity", 0)
-
         });
-        // .on('mouseover', function (d, i) {
-        //                           fade(d.Region, .1);
-        //                       })
-        //  .on('mouseout', function (d, i) {
-        //                          fadeOut();
-        //                      });
+         // .attr("r", 0) 
+        
       
     
 //Make and style cool display year in the middle
@@ -325,20 +522,42 @@ svg.select("text.middleyear")
         .style("font-size", "90px")
         .attr("x", 275)
         .attr("y", 250);
+    // Create the y axis
+      svg.append("g")
+        .attr("class", "axis")
+        .attr("id", "y-axis")
+       
+     svg.select("#y-axis")
+     .call(yAxis);    
+            
+    //create y-axis title
+     svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left)
+        .attr("x",0 - (svg_height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("Avg Life Expectancy");  
     
 //draw legend
-    var legend = svg.selectAll('legend')
-    .data(color.domain())
-    .enter()
-    .append('g')
-    .attr('class', 'legend')
-    .attr('transform', function(d, i) {
-        var leg_height = 20;
-        var leg_offset =  leg_height * color.domain().length /2;
-       //unecessary var :  var leg_horizontal = 500;
-        var leg_vertical = i * leg_height - leg_offset ;
-        return 'translate(' + 750 + ',' + leg_vertical + ')';
-            });
+     var filterValues = color.domain()
+   
+     var legend = svg.selectAll('legend')
+     .data(color.domain())
+     .enter()
+     .append('g')
+     .attr('class', 'legend')
+     .attr('transform', function(d, i) {
+        
+            var leg_height = 20;
+            var leg_offset =  leg_height * color.domain().length /2;
+            //unecessary var :  var leg_horizontal = 500;
+            var leg_vertical = i * leg_height - leg_offset ;
+                
+              return 'translate(' + 720 + ',' + leg_vertical + ')';
+     });
+
+
     
     legend.append('rect')
         .attr('width', legendRectSize)
@@ -351,15 +570,21 @@ svg.select("text.middleyear")
         .attr('y', legendRectSize - legendSpacing)
         .text(function(d) { return d; });
     
+
+    
 /******** HANDLE EXIT SELECTION ************/
 	// Remove circles that not longer have a matching data eleement
 	circles.exit().remove();
     // Set the year label
 	d3.select("#year_header").text("Year: " + display_year)
-    }    
     
+}    
+    
+    // var bar1_svg = dimple.newSvg( 400, 300);
     // load data
-    d3.csv("data/Gapminder_All_Time.csv", prepare, function(error, data) {
+  //Uses a callback because d3.json loading is asynchronous
+var pullData = function(settings,callback){
+    d3.csv("data/Gapminder_All_Time.csv", function(error, data) {
     // handle any data loading errors
         if(error){
             console.log("Something went wrong");
@@ -367,60 +592,64 @@ svg.select("text.middleyear")
         
         else{
             console.log("Data Loaded");
+
             
             // Assign  the data object loaded to the global dataset variable
             dataset = data;
             generateVis();
+
+            var newData = data;
+            var filtered = newData.filter(yearFilter);
+
+           var Mydata = d3.nest()
+              .key(function(d) {return d.Region;})
+              .rollup(function(v) {return v.length;})
+              .entries(filtered);
+
+      
+
+              newData = formatData(Mydata);
+
+       // console.log(newData)
+
+              callback(settings,newData);
+          
                     
             // Set the domains of the x and y scales using the data
-			var max_life = d3.max(dataset, function(d) { return +d.LifeExp;} ) +10;
+			      var max_life = d3.max(dataset, function(d) { return +d.LifeExp;} ) +10;
                    
-            var min_life = d3.min(dataset, function(d){return +d.LifeExp;}) - 10;
+            var min_life = d3.min(dataset, function(d){return +d.LifeExp;}) +5;
                     
-			var max_gdp = d3.max(dataset, function(d) { return +d.GDP;})+5000 ;
+			      var max_gdp = d3.max(dataset, function(d) { return +d.GDP;})+5000 ;
                          
-			var min_gdp = d3.min(dataset, function(d) { return +d.GDP;} )-1000 ;
+			      var min_gdp = d3.min(dataset, function(d) { return +d.GDP;} )-1000 ;
 		
-			xScale.domain([min_gdp,  max_gdp]);
-			yScale.domain([min_life, max_life]);
+			      xScale.domain([min_gdp,  max_gdp]);
+			      yScale.domain([min_life, max_life]);
             
             //Set the domain of r
             var min_pop = d3.min(dataset, function(d){return +d.Population;}); 
-            
-            console.log(min_pop)
+       
             var max_pop = d3.max(dataset, function(d) {return +d.Population;});
-            console.log(max_pop)
             
             r_scale.domain([min_pop, max_pop]);
             
 			// Create the x-axis
-			svg.append("g")
-				.attr("class", "axis")
-				.attr("id", "x-axis")
-				.attr("transform", "translate(0," + svg_height + ")")
-				svg.select("#x-axis")
+			     svg.append("g")
+				      .attr("class", "axis")
+				      .attr("id", "x-axis")
+				      .attr("transform", "translate(0," + svg_height + ")")
+				
+           svg.select("#x-axis")
                 .call(xAxis);
             
             //create x-axis title
-              svg.append("text")         .attr("transform", "translate(" + (svg_width/2) + " ," + (svg_height + margin.top + -55) + ")")
+           svg.append("text")        
+              .attr("transform", "translate(" + (svg_width/2) + " ," + (svg_height + margin.top + -55) + ")")
               .style("text-anchor", "middle")
                 .text("GDP ");
             
-			// Create the y axis
-			svg.append("g")
-				.attr("class", "axis")
-				.attr("id", "y-axis")
-                svg.select("#y-axis")
-                .call(yAxis);    
-            
-            //create y-axis title
-            svg.append("text")
-                .attr("transform", "rotate(-90)")
-                .attr("y", 0 - margin.left)
-                .attr("x",0 - (svg_height / 2))
-                .attr("dy", "1em")
-                .style("text-anchor", "middle")
-                .text("Avg Life Expectancy");  
+		
             
             // give action to play button 
             playButton
@@ -428,59 +657,69 @@ svg.select("text.middleyear")
                 var button = d3.select(this);
                 if (button.text() == "Pause") {
                      moving = false;
+                
                     clearInterval(timer);
                     // timer = 0;
                     button.text("Play");
                  } else {
                     moving = true;
-                    timer = setInterval(step, 600);
+                    timer = setInterval(step, 400);
                     button.text("Pause");
                  }
                 console.log("Slider moving: " + moving);
             })
         } 
     })
-            
-            function prepare(d) {
-                     // d.id = d.id;
-                    d.date = parseDate(d.Year);
-                    return d;
-            }
+}
+var formatData = function(data){
+    return data.sort(function (a, b) {
+      console.log("is there some data as well ?")
+        return b.value - a.value;
+      })
+    .slice(0, 10);
+}
+
+//I like to call it what it does
+var redraw = function(settings){
+
+  pullData(settings,redrawChart)
+}
+
+//setup (includes first draw)
+var settings = setup('body');
+redraw(settings)
+           
             
             function step() {
+
+                    var newyear=formatDateIntoYear(x.invert(currentValue))
+
                      
                     update(x.invert(currentValue));
-                    // console.log(x.invert(currentValue))
-                    console.log(x.invert(targetValue))
-                    currentValue = currentValue + (targetValue/23);
-                    display_year= display_year+1
-                    if (display_year > 2016) {
+                    // console.log(currentValue, " currentValue", "and" ,targetValue/400)
+                    currentValue = currentValue + (targetValue/80);
+                    if(newyear<1950){
+                      currentValue = currentValue  + targetValue/13 -1
+                    }else{
+                        currentValue = currentValue + targetValue/400
+                         }
+                    display_year= newyear
+                    if (currentValue > targetValue+20) {
                         moving = false;
-                        display_year = 2016;
+                        currentValue = 0;
                         clearInterval(timer);
-    // timer = 0;
+                        // timer = 0;
                         playButton.text("Play");
 
                         console.log("Slider moving: " + moving);
                     }
-                     generateVis();
+                     // generateVis();
             }
-            // function step() {
-            //         update(x.invert(currentValue));
-            //         currentValue = currentValue + (targetValue/151);
-            //         if (currentValue > targetValue) {
-            //         moving = false;
-            //         currentValue = 0;
-            //         clearInterval(timer);
-            //         // timer = 0;
-            //         playButton.text("Play");
-            //         console.log("Slider moving: " + moving);
-            //         }
-
-            // }
+         
 
             function update(h) {
              // update position and text of label according to slider scale
+               
                 handle.attr("cx", x(h));
                 label
                     .attr("x", x(h))
@@ -488,28 +727,14 @@ svg.select("text.middleyear")
 
                      // filter data set and redraw plot
                 var newData = dataset.filter(function(d) {
-                    return d.date < h;
+                    return d.year < h;
+                
                 })
-                
-               // display_year=h
+         
                 generateVis();
+                redraw(settings);
             }
-            
-            // Generate the visualisation
-            // generateVis();
-                
-            // Set up an interval callback to iterate through the avialble years
-  //           setInterval(function() {
-		// 	display_year = display_year + 1;
-		// 	if(display_year > 2016){
-		// 		 display_year = 1970;
-
-		// 	}
-		//   	generateVis();
-		// }, 1000);
-	  
-
- 
+   
 </script>
 </body>
 </html>
