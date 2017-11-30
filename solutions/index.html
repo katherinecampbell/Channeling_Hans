@@ -258,15 +258,17 @@ slider.insert("g", ".track-overlay")
     .enter()
     .append("text")
     .attr("x", x)
-    .attr("y", 10)
+    .attr("y", 7)
     .attr("text-anchor", "middle")
     .text(function(d) { return formatDateIntoYear(d); });
 
 //the below code renders the interactive legend useless    
-//// the small indicator of timer movement. 
-//var handle = slider.insert("circle", ".track-overlay")
-//    .attr("class", "handle")
-//    .attr("r", 9);
+// the small indicator of timer movement. 
+var handle = slider.insert("rect", ".track-overlay")
+    .attr("class", "handle")
+    .attr("width", 7)
+    .attr("height", 9)
+    .attr("y", -4);
 
 // same as text above in insert
 var label = slider.append("text")  
@@ -458,7 +460,27 @@ function generateVis(){
         .data(filtered_dataset, function key(d) {return d.Country;});                             
    // Update the display of existing elements to match new data
   	circles
-        .transition(d3.easeLinear,2)
+//        .transition(d3.easeLinear,2)
+//        .attr("cy", function(d,i) { 
+//		   		return yScale(d.LifeExp);
+//		  })
+//        .attr("cx", function(d, i) {
+//		   		return xScale(d.GDP);
+//		   })
+//        
+//        .attr("r", function(d, i) { return r_scale(d.Population);
+//            })
+//              .transition() //this fucntion is to make a blinking animation, at the moment is 0 which means we disabled it, but its still a cool feature.
+//              .duration(0)
+//              .attr("r", 3)
+//                 .transition()
+//                 .attr("r", function(d, i) { return r_scale(d.Population);})
+//        .style("fill", function(d) {return color(d[colorCat]);}) 
+//        .style("stroke-opacity", .3)
+//        .style("stroke", "black") 
+//        .style("opacity",0.8)
+    .transition()
+        .attr("class", "circle-border")
         .attr("cy", function(d,i) { 
 		   		return yScale(d.LifeExp);
 		  })
@@ -468,15 +490,7 @@ function generateVis(){
         
         .attr("r", function(d, i) { return r_scale(d.Population);
             })
-              .transition() //this fucntion is to make a blinking animation, at the moment is 0 which means we disabled it, but its still a cool feature.
-              .duration(0)
-              .attr("r", 3)
-                 .transition()
-                 .attr("r", function(d, i) { return r_scale(d.Population);})
-        .style("fill", function(d) {return color(d[colorCat]);}) 
-        .style("stroke-opacity", .3)
-        .style("stroke", "black") 
-        .style("opacity",0.8)
+        .duration(1000)
         
 
 //Make cool display year in the middle to update    
@@ -526,7 +540,6 @@ svg.select("text.middleyear")
         .style("font-size", "120px")
         .attr("x", 275)
         .attr("y", 180);
-    
     // Create the y axis
       svg.append("g")
         .attr("class", "axis")
@@ -736,7 +749,7 @@ redraw(settings)
             function update(h) {
              // update position and text of label according to slider scale
                
-                //handle.attr("cx", x(h));
+                handle.attr("x", x(h));
                 label
                     .attr("x", x(h))
                     .text(formatDate(h));
