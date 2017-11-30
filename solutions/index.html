@@ -182,8 +182,8 @@ var legendRectSize = 18;
 var legendSpacing = 4;
     
 //set up fill color for each region
-var colorValue = function(d) { return d.Region;},
-    color = d3.scaleOrdinal(d3.schemeCategory10);
+var colorCat = "Region";
+var color = d3.scaleOrdinal(d3.schemeCategory10);
 
 // add canvas to page with margin transfer
 var svg = d3.select("body")
@@ -262,10 +262,11 @@ slider.insert("g", ".track-overlay")
     .attr("text-anchor", "middle")
     .text(function(d) { return formatDateIntoYear(d); });
 
-// the small indicator of timer movement. 
-var handle = slider.insert("circle", ".track-overlay")
-    .attr("class", "handle")
-    .attr("r", 9);
+//the below code renders the interactive legend useless    
+//// the small indicator of timer movement. 
+//var handle = slider.insert("circle", ".track-overlay")
+//    .attr("class", "handle")
+//    .attr("r", 9);
 
 // same as text above in insert
 var label = slider.append("text")  
@@ -359,6 +360,7 @@ var redrawChart = function(targetID, newdata) {
     .attr("height", y.bandwidth())
     .attr("width", function(d) { return x(d.value);}) 
     .attr("width",function(d) { return x(d.value);})
+    .style("fill","#eaeaea")
     .on("mouseover", function() {
             d3.select(this)
               .style("fill", function(d) {return color(colorValue1(d));})
@@ -366,8 +368,7 @@ var redrawChart = function(targetID, newdata) {
     .on("mouseout", function(d, i) {
             d3.select(this).style("fill","#eaeaea")})
         
-    // .style("fill", function(d) {return color(colorValue1(d));}) ;
-    // .style("fill", "green")
+
   //Add value labels
   newRow.append("text")
     .attr("class","label")
@@ -454,8 +455,7 @@ function generateVis(){
   
     //make circles
     var circles = svg.selectAll("circle")
-        .data(filtered_dataset, function key(d) {return d.Country;});
-                                                    
+        .data(filtered_dataset, function key(d) {return d.Country;});                             
    // Update the display of existing elements to match new data
   	circles
         .transition(d3.easeLinear,2)
@@ -473,7 +473,7 @@ function generateVis(){
               .attr("r", 3)
                  .transition()
                  .attr("r", function(d, i) { return r_scale(d.Population);})
-        .style("fill", function(d) {return color(colorValue(d));}) 
+        .style("fill", function(d) {return color(d[colorCat]);}) 
         .style("stroke-opacity", .3)
         .style("stroke", "black") 
         .style("opacity",0.8)
@@ -491,9 +491,13 @@ svg.select("text.middleyear")
     //ENTER SELECTION
     circles
         .enter().append("circle")
+        .attr("r", 0) //makes circles appear like they are growing
         .attr("cx", function (d,i){return xScale(d.GDP);})
         .attr("cy", function(d, i){return yScale(d.LifeExp);})
-        .style("fill", function(d) { return color(colorValue(d));}) 
+        .style("fill", function(d) {return color(d[colorCat]);})
+        .style("opacity", .7)
+        .style("stroke-opacity", 1)
+    
         .on("mouseover", function(d) {
             tooltip_div.transition()
             .duration(200)
@@ -519,9 +523,10 @@ svg.select("text.middleyear")
         .text(display_year)
         .style("color", "gray")
         .style("opacity", .3)
-        .style("font-size", "90px")
+        .style("font-size", "120px")
         .attr("x", 275)
-        .attr("y", 250);
+        .attr("y", 180);
+    
     // Create the y axis
       svg.append("g")
         .attr("class", "axis")
@@ -540,30 +545,41 @@ svg.select("text.middleyear")
         .text("Avg Life Expectancy");  
     
 //draw legend
-     var filterValues = color.domain()
+     //var filterValues = color.domain()
    
-     var legend = svg.selectAll('legend')
+     var legend = svg.selectAll('.legend')
      .data(color.domain())
+     
      .enter()
      .append('g')
-     .attr('class', 'legend')
+     .classed("legend", true)
      .attr('transform', function(d, i) {
         
             var leg_height = 20;
             var leg_offset =  leg_height * color.domain().length /2;
-            //unecessary var :  var leg_horizontal = 500;
             var leg_vertical = i * leg_height - leg_offset ;
                 
               return 'translate(' + 720 + ',' + leg_vertical + ')';
      });
-
-
+    
     
     legend.append('rect')
         .attr('width', legendRectSize)
         .attr('height', legendRectSize)
         .style('fill', color)
-        .style('stroke', color);
+        
+    //hide or show circles pertaining to region clicked
+        .on("click", function(type) {
+            var active = this.active ? false : true;
+                newOpacity = active ? 0:.7;
+                blockOpacity = active ? .4 : .9;
+        
+        //hide or show circles
+                d3.selectAll("circle").filter(function(d){ return d["Region"]=== type;})
+                .style ("opacity", newOpacity);
+                d3.select(this).style("opacity", blockOpacity);
+                this.active = active;
+        });
     
     legend.append('text')
         .attr('x', legendRectSize + legendSpacing)
@@ -720,7 +736,7 @@ redraw(settings)
             function update(h) {
              // update position and text of label according to slider scale
                
-                handle.attr("cx", x(h));
+                //handle.attr("cx", x(h));
                 label
                     .attr("x", x(h))
                     .text(formatDate(h));
