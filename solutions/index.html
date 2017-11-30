@@ -460,27 +460,7 @@ function generateVis(){
         .data(filtered_dataset, function key(d) {return d.Country;});                             
    // Update the display of existing elements to match new data
   	circles
-//        .transition(d3.easeLinear,2)
-//        .attr("cy", function(d,i) { 
-//		   		return yScale(d.LifeExp);
-//		  })
-//        .attr("cx", function(d, i) {
-//		   		return xScale(d.GDP);
-//		   })
-//        
-//        .attr("r", function(d, i) { return r_scale(d.Population);
-//            })
-//              .transition() //this fucntion is to make a blinking animation, at the moment is 0 which means we disabled it, but its still a cool feature.
-//              .duration(0)
-//              .attr("r", 3)
-//                 .transition()
-//                 .attr("r", function(d, i) { return r_scale(d.Population);})
-//        .style("fill", function(d) {return color(d[colorCat]);}) 
-//        .style("stroke-opacity", .3)
-//        .style("stroke", "black") 
-//        .style("opacity",0.8)
-    .transition()
-        .attr("class", "circle-border")
+        .transition()
         .attr("cy", function(d,i) { 
 		   		return yScale(d.LifeExp);
 		  })
@@ -490,7 +470,18 @@ function generateVis(){
         
         .attr("r", function(d, i) { return r_scale(d.Population);
             })
-        .duration(1000)
+        
+        
+              //.transition() //this fucntion is to make a blinking animation, at the moment is 0 which means we disabled it, but its still a cool feature.
+              //.duration(0)
+              //.attr("r", 3)
+                // .transition()
+                // .attr("r", function(d, i) { return r_scale(d.Population);})
+//        .style("fill", function(d) {return color(d[colorCat]);}) 
+        .style("stroke-opacity", .3)
+        .style("stroke", "black") 
+
+
         
 
 //Make cool display year in the middle to update    
@@ -540,6 +531,7 @@ svg.select("text.middleyear")
         .style("font-size", "120px")
         .attr("x", 275)
         .attr("y", 180);
+    
     // Create the y axis
       svg.append("g")
         .attr("class", "axis")
