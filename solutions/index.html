@@ -12,12 +12,14 @@
 .bar{
   fill:#eaeaea;
 }
+    
 text.label{
   fill: #777777;
   color: #777777;
   font-size: 20px;
   font-weight: bold;
 }
+    
 text.category{
   fill: #666666;
 }
@@ -40,7 +42,7 @@ text.category{
         height: 120px;					
         padding: 2px;				
         font: 12px sans-serif;		
-        background-color: lightblue;
+        background-color: #d1e2ff;
         border: 5px;
         border-color: darkgrey;		
         border-radius: 8px;			
@@ -50,19 +52,23 @@ text.category{
     .legend {
         font-size: 12px;
       }
+    
     .ticks {
   font: 10px sans-serif;
         }
+    
   #play-button {
       position: absolute;
       top: 70px;
       left: 50px;
       background: #f08080;
       padding-right: 26px;
-      border-radius: 3px;
+      border-radius: 8px;
       border: none;
       color: white;
-      margin: 0;
+      margin-top: 9.5%;
+      margin-bottom: 10px;
+      margin-left: 18px;
       padding: 0 12px;
       width: 60px;
       cursor: pointer;
@@ -112,7 +118,25 @@ text.category{
       height:400px;
     }
 
+    h2{margin-left: 20px;}
     
+    #dropdown {background-color: #d1e2ff;
+    color: white;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 5px;
+    margin-left: 60px;
+    width: 171px;}
+    
+    .menu {width: auto;} 
+    
+    .instructions{ 
+        font-weight: bold;
+        margin: 20px;
+        width:50%;
+    }
 	</style>
 <!--   <div id="barContainer">
 <p> hello </p>
@@ -121,22 +145,35 @@ text.category{
 <body>
  
 <!-- <h3 id = "year_header">Year: </h3> -->
+<h2>Gapminder.</h2> 
+<div class="instructions"> This graph shows every country over the last 115 years in terms of GDP per capita, life expectancy, and population.  Click the appropriate box in the legend to view/hide specific regions of the world. </div>
     
 <div id="vis">
+    
   <button id="play-button">Play</button>
 </div> 
-<div id="bars"> hello</div>
+<div id = "dropdown"></div>
+
     
 
 <script>
+
     
-    //look at making population area not radius - make your own area formula
-    //whatever is make first goes on the bottom
-    //best practice is to order the csv by descending order population so then the biggest populations are drawn first
+//whatever is make first goes on the bottom
+//best practice is to order the csv by descending order population so then the biggest populations are drawn first
     
 //global data variable
 var dataset;
-   
+
+//global country display variable
+var display_country;    
+    
+//global nested dropdown variables
+var countriesDropDown;
+
+//global var for opacity of big SVG to implement trace    
+var bigSVGOpacity;     
+    
 //This section is variables for svg for main bubble charts  
 //margins , width and height for bubble chart svg 
 var margin = {top: 100, right: 20, bottom: 45, left: 60};
@@ -144,9 +181,6 @@ var outer_width = 900;
 var outer_height = 500;
 var svg_width = outer_width - margin.left - margin.right;
 var svg_height = outer_height - margin.top - margin.bottom;
-    
-
-
 
 
 // First year to display
@@ -154,9 +188,62 @@ display_year = 1900;
 
 // function that filters data by year
 function yearFilter(value){
-	
-  return (value.Year == display_year)
+	return (value.Year == display_year)
 }
+    
+    
+//load data ONCE to populate dropdown
+d3.csv("data/Gapminder_All_Time.csv", function(error, data) {
+    // handle any data loading errors
+        if(error){
+            console.log("Something went wrong");
+            console.log(error);}
+        
+        else{
+            console.log("Data Loaded");
+            dataset = data;
+            
+        //data for dropdown      
+        countriesDropDown = d3.nest()
+                .key(function(d){return d.Country;})
+                .rollup(function(v){return v.length;})
+                .entries(data);
+   
+        //create dropdown
+            dropdown = d3.select('#dropdown')
+                .append("select")
+                .attr('class','menu')
+                .attr('name', 'country-list')
+            
+            options = dropdown.selectAll("option")
+                .data(countriesDropDown)
+                .enter()
+                .append("option");
+                
+            options.attr("value", function (d) { return d.key; })
+                .text(function (d) {return d.key; });
+            
+            dropdown
+                .on("change", dropchange );}
+});
+
+console.log(display_country)
+console.log(bigSVGOpacity)
+//function to get country from dropdown
+ var blah = 0;                   
+    function dropchange() {
+        console.log('times changed', blah)
+        var si   = dropdown.property('selectedIndex'),
+        s    = options.filter(function (d, i) { return i === si }),
+        data = s.datum()
+        display_country = data.key;
+        blah = blah + 1;
+        bigSVGOpacity = 1;
+        console.log(bigSVGOpacity)
+        console.log(display_country)
+        return display_country;
+}             
+    
     
 // XScale is using  scaleSqrt as this is the way we can give more space for first 20% of GDP, where everthing happens and thus the animation more visable
 var xScale = d3.scaleSqrt()
@@ -262,8 +349,6 @@ slider.insert("g", ".track-overlay")
     .attr("text-anchor", "middle")
     .text(function(d) { return formatDateIntoYear(d); });
 
-//the below code renders the interactive legend useless    
-// the small indicator of timer movement. 
 var handle = slider.insert("rect", ".track-overlay")
     .attr("class", "handle")
     .attr("width", 7)
@@ -457,7 +542,8 @@ function generateVis(){
   
     //make circles
     var circles = svg.selectAll("circle")
-        .data(filtered_dataset, function key(d) {return d.Country;});                             
+        .data(filtered_dataset, function key(d) {return d.Country;});    
+    
    // Update the display of existing elements to match new data
   	circles
         .transition()
@@ -477,9 +563,7 @@ function generateVis(){
               //.attr("r", 3)
                 // .transition()
                 // .attr("r", function(d, i) { return r_scale(d.Population);})
-//        .style("fill", function(d) {return color(d[colorCat]);}) 
-        .style("stroke-opacity", .3)
-        .style("stroke", "black") 
+
 
 
         
@@ -500,13 +584,17 @@ svg.select("text.middleyear")
         .attr("cx", function (d,i){return xScale(d.GDP);})
         .attr("cy", function(d, i){return yScale(d.LifeExp);})
         .style("fill", function(d) {return color(d[colorCat]);})
-        .style("opacity", .7)
-        .style("stroke-opacity", 1)
-    
+        if(bigSVGOpacity == 1){
+           circles.style("opacity", .1)}
+        else{circles.style("opacity", .7)
+            .style("stroke-opacity", .9)}
+       
+    //implement tooltip and info    
+    circles
         .on("mouseover", function(d) {
             tooltip_div.transition()
-            .duration(200)
-            .style("opacity", .9);
+        .duration(200)
+        .style("opacity", .9);
             
         tooltip_div.html("Country: " + d["Country"] + "<br/>" + "Region: " + d["Region"] + "<br/>" + "Coastline: " + d["Coastline"] + "<br/>" + "Population: " + d["Population"] + "<br/>" +"GDP: " + d["GDP"] + "<br/>" +"Life Expectancy: "+ d["LifeExp"] + "<br/>" +"Government: " + d["Government"])
             .style("left", (d3.event.pageX) + "px")
@@ -516,24 +604,30 @@ svg.select("text.middleyear")
             tooltip_div.transition()
               .duration(500)
               .style("opacity", 0)
-        });
-         // .attr("r", 0) 
-        
-      
+        }); 
     
-//Make and style cool display year in the middle
-    svg
-        .append("text")
-        .attr("class","middleyear")
-        .text(display_year)
-        .style("color", "gray")
-        .style("opacity", .3)
-        .style("font-size", "120px")
-        .attr("x", 275)
-        .attr("y", 180);
+    //Make and style cool display year in the middle with respect to opacity
+    if(bigSVGOpacity == 1){
+        svg.append("text")
+            .attr("class","middleyear")
+            .text(display_year)
+            .style("color", "gray")
+            .style("font-size", "90px")
+            .attr("x", 275)
+            .attr("y", 180)
+            .style("opacity", .1)}
+    else{
+        svg.append("text")
+            .attr("class","middleyear")
+            .text(display_year)
+            .style("color", "gray")
+            .style("font-size", "90px")
+            .attr("x", 275)
+            .attr("y", 180)
+            .style("opacity", .3)}
     
     // Create the y axis
-      svg.append("g")
+    svg.append("g")
         .attr("class", "axis")
         .attr("id", "y-axis")
        
@@ -550,28 +644,23 @@ svg.select("text.middleyear")
         .text("Avg Life Expectancy");  
     
 //draw legend
-     //var filterValues = color.domain()
-   
      var legend = svg.selectAll('.legend')
      .data(color.domain())
-     
      .enter()
      .append('g')
      .classed("legend", true)
      .attr('transform', function(d, i) {
-        
             var leg_height = 20;
             var leg_offset =  leg_height * color.domain().length /2;
-            var leg_vertical = i * leg_height - leg_offset ;
-                
-              return 'translate(' + 720 + ',' + leg_vertical + ')';
-     });
-    
+            var leg_vertical = i * leg_height - leg_offset ;  
+            return 'translate(' + 720 + ',' + leg_vertical + ')';
+            });
     
     legend.append('rect')
         .attr('width', legendRectSize)
         .attr('height', legendRectSize)
         .style('fill', color)
+        .style("cursor", "pointer")
         
     //hide or show circles pertaining to region clicked
         .on("click", function(type) {
@@ -590,7 +679,6 @@ svg.select("text.middleyear")
         .attr('x', legendRectSize + legendSpacing)
         .attr('y', legendRectSize - legendSpacing)
         .text(function(d) { return d; });
-    
 
     
 /******** HANDLE EXIT SELECTION ************/
@@ -601,7 +689,6 @@ svg.select("text.middleyear")
     
 }    
     
-    // var bar1_svg = dimple.newSvg( 400, 300);
     // load data
   //Uses a callback because d3.json loading is asynchronous
 var pullData = function(settings,callback){
@@ -670,8 +757,7 @@ var pullData = function(settings,callback){
               .style("text-anchor", "middle")
                 .text("GDP ");
             
-		
-            
+		  
             // give action to play button 
             playButton
                  .on("click", function() {
