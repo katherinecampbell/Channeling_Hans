@@ -5,7 +5,6 @@
 <script type="text/javascript" src="./d3/d3.v4.js" charset="utf-8"></script>
 
 
-
 <!-- Example based on http://bl.ocks.org/mbostock/3887118 -->
 <!-- Tooltip example from http://www.d3noob.org/2013/01/adding-tooltips-to-d3js-graph.html -->
 <style type="text/css">
@@ -135,18 +134,16 @@ text.category{
     .instructions{ 
         font-weight: bold;
         margin: 20px;
-        width:50%;
+        width:67.5%;
     }
 	</style>
-<!--   <div id="barContainer">
-<p> hello </p>
-  </div> -->
+
     </head>
 <body>
  
 <!-- <h3 id = "year_header">Year: </h3> -->
 <h2>Gapminder.</h2> 
-<div class="instructions"> This graph shows every country over the last 115 years in terms of GDP per capita, life expectancy, and population.  Click the appropriate box in the legend to view/hide specific regions of the world. </div>
+<div class="instructions"> This graph shows every country over the last 116 years in terms of GDP per capita, life expectancy, and population. Pick a country from the drop-down to see its individual progress, or click the button to see its individual trace. Click the appropriate box in the legend to view/hide specific regions of the world. </div>
     
 <div id="vis">
     
@@ -190,8 +187,12 @@ display_year = 1900;
 function yearFilter(value){
 	return (value.Year == display_year)
 }
-    
-    
+
+//function that filters data by country    
+function countryFilter(value){
+	return (value.Country == display_country)
+}
+
 //load data ONCE to populate dropdown
 d3.csv("data/Gapminder_All_Time.csv", function(error, data) {
     // handle any data loading errors
@@ -243,16 +244,40 @@ console.log(bigSVGOpacity)
         console.log(display_country)
         return display_country;
 }             
+
     
+function trace() {
+
+    var filtered_country = dataset.filter(countryFilter);
+
+    var filtered_dataset = filtered_country.filter(yearFilter);
+
+    var locations = svg.selectAll(".location")
+    .data (filtered_dataset, function key(d) {return d.Country;});
+    console.log(filtered_dataset);
+    console.log('starting trace')
+  
+    // if filtered dataset has more circles than already existing, transition new ones in
+  
+    locations.enter()
+    .append("circle")
+    .attr("class", "location")
+    .attr("cx", function(d) { return xScale(d.GDP) ;})
+    .attr("cy", function(d) { return yScale(d.LifeExp); })
+    .style("opacity", 1)
+    .attr("r", function(d) {return r_scale(d.Population);})
+  locations.exit()
+    .remove();
+}    
     
 // XScale is using  scaleSqrt as this is the way we can give more space for first 20% of GDP, where everthing happens and thus the animation more visable
 var xScale = d3.scaleSqrt()
     .range([0,  svg_width -20])
-    // setting up the xAxis 
+    
+// setting up the xAxis 
 var xAxis = d3.axisBottom().scale(xScale)
             .ticks(4)
             .tickFormat(d3.format("0.1s"));
-
     
 // setup y
 var yScale = d3.scaleLinear()
@@ -281,7 +306,6 @@ var svg = d3.select("body")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");  
 
 // this section is for varables for time slider
-
 var t_width = 830
 var t_height = 30
 var x = d3.scaleTime()
@@ -298,7 +322,7 @@ var parseDate = d3.timeParse("%y");
 var startDate = new Date( "1900" );
 var  endDate = new Date("2016");
 
-// making the svg for play button and so ong
+// making the svg for play button and so on
 var svg1 = d3.select("#vis")
     .append("svg")
     .attr("width", t_width + 60 +60 )
@@ -367,8 +391,9 @@ var label = slider.append("text")
 var tooltip_div = d3.select("body").append("div")
     .attr("class", "tooltip")
     .style("opacity", 0.10);
+    
+    
 /************************* This part is for bar chart section ***************************************************/
-//updatingBarChart.js
 
 var setup = function(targetID){
   //Set size of svg element and chart
@@ -402,6 +427,7 @@ var setup = function(targetID){
   }
   return settings;
 }
+
 var redrawChart = function(targetID, newdata) {
   // console.log(display_year)
   // console.log("hello i am here ", newdata)
@@ -423,16 +449,17 @@ var redrawChart = function(targetID, newdata) {
   x.domain([0,barmax]);
 
 
-
   /////////
   //ENTER//
   /////////
 
   //Bind new data to chart rows 
   var colorValue1 = function(d) { return d.key;};
+    
   //Create chart row and move to below the bottom of the chart
   var chartRow = svg.selectAll("g.chartRow")
     .data(newdata, function(d){ return d.key});
+    
   var newRow = chartRow
     .enter()
     .append("g")
@@ -507,7 +534,6 @@ var redrawChart = function(targetID, newdata) {
     .duration(100)
     .attr("opacity",1);
 
-
   ////////
   //EXIT//
   ////////
@@ -517,7 +543,6 @@ var redrawChart = function(targetID, newdata) {
     .style("opacity","0")
     .attr("transform", "translate(0," + (height + margin.top + margin.bottom) + ")")
     .remove();
-
 
   ////////////////
   //REORDER ROWS//
@@ -533,11 +558,10 @@ var redrawChart = function(targetID, newdata) {
  
 // This is the main function we use to create the bubble chart( create lots circle based on the data form CSV)
 function generateVis(){   
-  
+  console.log('genvis')
     // Filter the data to only include the current year
 	  var filtered_dataset = dataset.filter(yearFilter);
-
-    
+  
     // PERFORM DATA JOIN
   
     //make circles
@@ -565,9 +589,6 @@ function generateVis(){
                 // .attr("r", function(d, i) { return r_scale(d.Population);})
 
 
-
-        
-
 //Make cool display year in the middle to update    
 svg.select("text.middleyear")
         .remove();
@@ -575,6 +596,21 @@ svg.select("text.middleyear")
 svg.select("text.middleyear")
         .append("text")
         .text(display_year);
+    circles
+        .on("mouseover", function(d) {
+            tooltip_div.transition()
+        .duration(200)
+        .style("opacity", .9);
+            
+        tooltip_div.html("Country: " + d["Country"] + "<br/>" + "Region: " + d["Region"] + "<br/>" + "Coastline: " + d["Coastline"] + "<br/>" + "Population: " + d["Population"] + "<br/>" +"GDP: " + d["GDP"] + "<br/>" +"Life Expectancy: "+ d["LifeExp"] + "<br/>" +"Government: " + d["Government"])
+            .style("left", (d3.event.pageX) + "px")
+            .style("top", (d3.event.pageY - 25) + "px");
+        })
+        .on("mouseout", function(d) {
+            tooltip_div.transition()
+              .duration(500)
+              .style("opacity", 0)
+        }); 
     
   
     //ENTER SELECTION
@@ -714,15 +750,12 @@ var pullData = function(settings,callback){
               .rollup(function(v) {return v.length;})
               .entries(filtered);
 
-      
-
               newData = formatData(Mydata);
 
        // console.log(newData)
 
               callback(settings,newData);
-          
-                    
+                             
             // Set the domains of the x and y scales using the data
 			      var max_life = d3.max(dataset, function(d) { return +d.LifeExp;} ) +10;
                    
@@ -820,7 +853,7 @@ redraw(settings)
 
                         console.log("Slider moving: " + moving);
                     }
-                     // generateVis();
+                     
             }
          
 
@@ -839,7 +872,8 @@ redraw(settings)
                 })
          
                 generateVis();
-                redraw(settings);
+                trace();
+                //redraw(settings);
             }
    
 </script>
